@@ -6,14 +6,34 @@ describe('Game5', function () {
     const Game = await ethers.getContractFactory('Game5');
     const game = await Game.deploy();
 
-    return { game };
+    const threshold = 0x00FfFFfFFFfFFFFFfFfFfffFFFfffFfFffFfFFFf;
+
+    let passingAddress;
+
+    while(!passingAddress) {
+      wallet = ethers.Wallet.createRandom();
+      address = await wallet.getAddress();
+      if (address < threshold) {
+        console.log("Address: ", address);
+        passingAddress = true;
+      }
+    };
+
+    wallet = wallet.connect(ethers.provider);
+    const signer = ethers.provider.getSigner(0);
+    await signer.sendTransaction({
+      to: address,
+      value: ethers.utils.parseEther("100")
+    })
+
+    return { game, wallet };
   }
   it('should be a winner', async function () {
-    const { game } = await loadFixture(deployContractAndSetVariables);
+    const { game, wallet } = await loadFixture(deployContractAndSetVariables);
 
     // good luck
 
-    await game.win();
+    await game.connect(wallet).win();
 
     // leave this assertion as-is
     assert(await game.isWon(), 'You did not win the game');
